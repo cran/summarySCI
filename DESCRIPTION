@@ -1,6 +1,6 @@
 Package: summarySCI
 Title: Produces Publication-Ready Summary Tables
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: 
     c(person("Sämi", "Schär", email = "Saemi.Schaer@swisscancerinstitute.ch", role = "aut"),
       person("Charlotte", "Micheloud", email = "Charlotte.Micheloud@swisscancerinstitute.ch", 
@@ -9,17 +9,19 @@ Description: Produces tables with descriptive statistics for continuous, categor
 License: LGPL-3
 Encoding: UTF-8
 RoxygenNote: 7.3.2
+Depends: R (>= 4.1)
 Imports: Hmisc, cardx, dplyr, gtsummary (>= 2.3.0), forcats, labelled,
         purrr, rlang, tidyr, flextable, officer
-Suggests: knitr, tidyverse, survival
+Suggests: knitr, tidyverse, survival, testthat (>= 3.0.0), rmarkdown,
+        stringr
 VignetteBuilder: knitr
 URL: https://github.com/SAKK-Statistics/summarySCI/
 BugReports: https://github.com/SAKK-Statistics/summarySCI/issues
+Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2025-10-09 12:20:09 UTC; charlottemi
+Packaged: 2026-09-14 11:53:58 UTC; charlottemi
 Author: Sämi Schär [aut],
   Charlotte Micheloud [cre, aut]
 Maintainer: Charlotte Micheloud <Charlotte.Micheloud@swisscancerinstitute.ch>
-Depends: R (>= 4.1.0)
 Repository: CRAN
-Date/Publication: 2025-10-15 20:00:02 UTC
+Date/Publication: 2026-09-14 20:30:02 UTC

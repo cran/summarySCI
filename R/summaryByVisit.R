@@ -95,20 +95,21 @@ summaryByVisit<- function(data,
   }
 
   # ---------------------------------------------------- #
-  # settle visit order
+  # define visit order
+
   if (!is.null(order)){
     data <- data|>
       dplyr::arrange(order)|>
-      dplyr::mutate(visit = factor(visit, levels = unique(visit)))|>
       as.data.frame()
   } else{
     # order visit numbers not lexicographic
     data <- data|>
       dplyr::mutate(group_num = as.numeric(gsub("[^0-9]", "", visit)))|>
       dplyr::arrange(group_num)|>
-      dplyr::mutate(visit = factor(visit, levels = unique(visit)))|>
       as.data.frame()
   }
+
+  data[[visit]] <- factor(data[[visit]], levels = unique(data[[visit]]))
 
   # remove rows without visit
   data <- data[(!is.na(data[[visit]])),]
@@ -150,18 +151,18 @@ summaryByVisit<- function(data,
     # Without groups
     if (is.null(group)){
       assign(paste0("t", i), data|>
-               dplyr::select(select_vars)|>
+               dplyr::select(any_of(select_vars))|>
                gtsummary::tbl_strata_nested_stack(
                  .x ,
-                 strata = strata0,
+                 strata = any_of(strata0),
                  .tbl_fun = ~ .x |>
                    gtsummary::tbl_summary(missing="no",
                                           statistic = list(gtsummary::all_continuous() ~ stat_cont),
-                                          type= vars[i] ~ "continuous",
+                                          type= all_of(vars[i]) ~ "continuous",
                                           digits = list(gtsummary::all_continuous() ~ digits_cont))|>
-                   gtsummary::add_n()|>
-                   gtsummary::add_overall()|>
-                   gtsummary::modify_header(update = list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
+                   gtsummary::add_n(last=TRUE)|>
+                   gtsummary::add_overall(last=TRUE)|>
+                   gtsummary::modify_header(!!!list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
       )
     }
     # for 2 groups
@@ -178,19 +179,19 @@ summaryByVisit<- function(data,
                                             by=group,
                                             type= vars[i] ~ "continuous",
                                             digits = list(gtsummary::all_continuous() ~ digits_cont))|>
-                     gtsummary::add_n()|>
-                     gtsummary::add_overall()|>
+                     gtsummary::add_n(last=TRUE)|>
+                     gtsummary::add_overall(last=TRUE)|>
                      gtsummary::add_stat(
                        fns = dplyr::everything() ~ add_by_n
                      ) |>
-                     gtsummary::modify_header(starts_with("add_n_stat") ~ "**N**") |>
-                     gtsummary::modify_table_body(
-                       ~ .x |>
-                         dplyr::relocate(n, .before = stat_0) |>
-                         dplyr::relocate(add_n_stat_1, .before = stat_1) |>
-                         dplyr::relocate(add_n_stat_2, .before = stat_2)
+                     gtsummary::modify_header(starts_with("add_n_stat") ~ "**N**")  |>
+                     gtsummary::modify_table_body(~ .x |>
+                                                    dplyr::ungroup() |>
+                                                    dplyr::relocate(dplyr::any_of("n"),            .before = dplyr::any_of("stat_0")) |>
+                                                    dplyr::relocate(dplyr::any_of("add_n_stat_1"), .before = dplyr::any_of("stat_1")) |>
+                                                    dplyr::relocate(dplyr::any_of("add_n_stat_2"), .before = dplyr::any_of("stat_2"))
                      )|>
-                     gtsummary::modify_header(update = list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
+                     gtsummary::modify_header(!!!list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
         )
       }
       # for 3 groups
@@ -206,12 +207,12 @@ summaryByVisit<- function(data,
                                             by=group,
                                             type= vars[i] ~ "continuous",
                                             digits = list(gtsummary::all_continuous() ~ digits_cont))|>
-                     gtsummary::add_n()|>
-                     gtsummary::add_overall()|>
+                     gtsummary::add_n(last=TRUE)|>
+                     gtsummary::add_overall(last=TRUE)|>
                      gtsummary::add_stat(
                        fns = dplyr::everything() ~ add_by_n
                      ) |>
-                     gtsummary::modify_header(starts_with("add_n_stat") ~ "**N**") |>
+                     gtsummary::modify_header(starts_with("add_n_stat") ~ "**N**")  |>
                      gtsummary::modify_table_body(
                        ~ .x |>
                          dplyr::relocate(n, .before = stat_0) |>
@@ -219,7 +220,7 @@ summaryByVisit<- function(data,
                          dplyr::relocate(add_n_stat_2, .before = stat_2)|>
                          dplyr::relocate(add_n_stat_3, .before = stat_3)
                      )|>
-                     gtsummary::modify_header(update = list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
+                     gtsummary::modify_header(!!!list(label ~ paste0("**", gsub("\\b(\\w)", "\\U\\1", tolower(visit), perl = TRUE),"**"))), quiet = TRUE)
         )
       }
     }
@@ -309,11 +310,20 @@ summaryByVisit<- function(data,
     }
   }
 
+  # Footnote für N
+  tbl <- tbl|>
+    modify_footnote_header(
+      columns  = n,
+      footnote = "N without missing values"
+    )|>
+    modify_table_styling(columns = starts_with("add_n_stat_"), footnote = "N without missing values")
+
   # if overall column not desired
   if (overall==FALSE & !is.null(group)){
     tbl<-tbl|>
       gtsummary::modify_column_hide(columns = c("stat_0", "n"))
   }
+
   # if flex_table is needed
   if(as_flex_table == TRUE | word_output == TRUE){
     if (border == TRUE){
